@@ -3,10 +3,9 @@ import { MAX_NOTE_LENGTH } from "~/lib/notes";
 import { describeNoteDraft } from "../index";
 
 describe("describeNoteDraft", () => {
-  it("counts the characters and what is left", () => {
-    const draft = describeNoteDraft("hello", "");
-    expect(draft.length).toBe(5);
-    expect(draft.remaining).toBe(MAX_NOTE_LENGTH - 5);
+  it("counts the characters the server would store", () => {
+    expect(describeNoteDraft("hello", "").length).toBe(5);
+    expect(describeNoteDraft("  hello\n", "").length).toBe(5);
   });
 
   it("lets a new note be saved", () => {
@@ -37,16 +36,21 @@ describe("describeNoteDraft", () => {
   it("allows a note of exactly the maximum length", () => {
     const draft = describeNoteDraft("a".repeat(MAX_NOTE_LENGTH), "");
     expect(draft).toMatchObject({
-      remaining: 0,
+      length: MAX_NOTE_LENGTH,
       tooLong: false,
       canSave: true,
     });
   });
 
+  it("does not count whitespace the server trims toward the maximum", () => {
+    const draft = describeNoteDraft(`${"a".repeat(MAX_NOTE_LENGTH)}  \n`, "");
+    expect(draft).toMatchObject({ tooLong: false, canSave: true });
+  });
+
   it("flags a note one character over the maximum and blocks Save", () => {
     const draft = describeNoteDraft("a".repeat(MAX_NOTE_LENGTH + 1), "");
     expect(draft).toMatchObject({
-      remaining: -1,
+      length: MAX_NOTE_LENGTH + 1,
       tooLong: true,
       canSave: false,
     });
